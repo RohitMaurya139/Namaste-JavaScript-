@@ -6,8 +6,10 @@ Scope in JavaScript is directly related to Lexical Environment. The Lexical Envi
 Sample code:
 
 ```js
+// CASE 1
 function a() {
-  console.log(b);
+  console.log(b); // 10
+  // Instead of printing undefined it prints 10, So somehow this a function could access the variable b outside the function scope.
 }
 var b = 10;
 a();
@@ -19,11 +21,21 @@ Sample output:
 10
 ```
 
-Justification:
+## Justification:
 
-When the function is invoked as `a();`, the JavaScript engine looks for `b` in the local memory space of `a()`. Failing to find it, it then searches for the same a level up, the global memory space in this case, and finds the value `10` assigned to `b`.
+- When the function is invoked as `a();`, the JavaScript engine performs a variable lookup for `b`.
+- It first looks for `b` in the **local memory space** of the function `a()`.
+- If `b` is not found locally, the engine moves **one level up**, which is the **outer lexical environment**.
+- In this case, the outer level is the **global memory space**, where it finds `b = 10`.
+- If `b` were **not available** in the global scope either, the engine would:
+  - Continue searching **up the scope chain** (one level at a time).
+  - Repeat this process until it:
+    - **Finds the variable**, or
+    - **Reaches the global scope** and still doesn’t find it.
+- If the variable is not found anywhere in the chain, JavaScript throws a **ReferenceError**.
 
-If, suppose, `b` weren't available in the upper level, and there were more levels preceding the current level, it'll search for `b` in the upper levels, till either it finds it or we run out of levels, which happens when one reaches the global memory space.
+> This entire mechanism is called **Lexical Scoping** or **Scope Chain Resolution**.
+
 
 Sample code:
 
@@ -31,7 +43,7 @@ Sample code:
 function a() {
   c();
   function c() {
-    console.log(b);
+    console.log(b); // 10
   }
 }
 var b = 10;
@@ -49,13 +61,28 @@ Let's take another example.
 Sample code:
 
 ```js
+// CASE 3
+function a() {
+  c();
+  function c() {
+    var b = 100;
+    console.log(b); // 100
+  }
+}
+var b = 10;
+a();
+```
+```
+// CASE 4
 function a() {
   var b = 10;
   c();
-  function c() {}
+  function c() {
+    console.log(b); // 10
+  }
 }
 a();
-console.log(b);
+console.log(b); // Error, Not Defined
 ```
 
 The above code will face the following error:
@@ -77,24 +104,98 @@ The Scope is directly dependent on the Lexical Environment.
 
 > _Whenever an **Execution Context** is created, a **Lexical Environment** is also created._
 
-Lexical Environment is the local memory along with the Lexical Environment of its parent. Lexical, as a term, means in hierarchy, or in a sequence.
+## Lexical Environment in JavaScript
 
-Corresponding to the above code block, we can say that the `c()` is lexically sitting inside `a()`. In terms of code, it's basically where a particular data member is located. Corresponding to that, we can say that `a()` is lexically inside the global scope.
-
-Whenever a new Execution Context is created, in the memory component of this Execution Context, we also get a reference to the Lexical Environment to its parent. In case of the Global Execution Context, this reference points to `null`.
-
-It can be visualized by the diagram below, in correspondence to the above code.
-
-![lexical-env-visualization-js.png](https://i.ibb.co/Tm4WsH9/lexical-env-visualization-js.png)
-
-So, technically when a variable is not found in the current local memory, the engine searches for that variable in the reference which points to the lexical parent and continues this process until the variable is found or we hit `null`. This search mechanism works on the basis of the **Scope Chain**. So, _the **Scope Chain** is the chain of all these lexical environments and their parent references._
-
-So, whenever an Execution Context is created, a Lexical Environment is also created, which is a part of the memory component of this Execution Context. This Lexical Environment is actually a reference to the memory component of the lexical parent of the current Execution Context and in case of the **GEC** (Global Execution Context), this reference points to `null`.
-
-> So, a variable is `not defined` when this **Scope Chain** is exhausted and the variable is not found.
-
-The **Scope Chain** can be visualized by using the developer tools of any modern browser.
-
-![scope-chain-dev-tools.png](https://i.ibb.co/pwKFHZK/scope-chain-dev-pngtools.)
+- **Lexical Environment** = Local Memory + Reference to the Lexical Environment of its parent.
+- The term **"Lexical"** refers to a structure that is **hierarchical** or **sequential** in nature.
 
 ---
+
+## Code-Level Understanding
+
+- In the context of the code:
+  - `c()` is **lexically** inside `a()`.
+  - `a()` is **lexically** inside the **global scope**.
+- This means that the **location of a function or variable** in the source code determines its **lexical environment**.
+
+---
+
+## Execution Context Relationship
+
+- Every time a new **Execution Context** is created:
+  - Its **memory component** includes a **reference to the parent Lexical Environment**.
+- For the **Global Execution Context**, this reference is **null** because it has no parent.
+
+---
+
+## Visualization
+
+- This relationship can be **visualized** like a **chain of environments**, from inner to outer:
+
+
+![lexical-env-visualization-js.png](../images/lexical.jpg)
+
+
+- When a variable is **not found** in the current **local memory**, the JavaScript engine:
+  - Searches for it in the **lexical parent environment**.
+  - Continues this process **up the chain** until:
+    - The variable is found, or
+    - The reference reaches `null` (i.e., **global scope is exhausted**).
+
+---
+
+## Scope Chain
+
+- The **Scope Chain** is the **chain of all Lexical Environments** linked through their parent references.
+- This mechanism is what powers **variable lookup** in JavaScript.
+
+---
+
+## Execution Context and Lexical Environment
+
+- Whenever an **Execution Context** is created:
+  - A **Lexical Environment** is also created.
+  - This is part of the **memory component** of the Execution Context.
+- The Lexical Environment includes:
+  - Local variables/functions.
+  - A **reference to the Lexical Environment of the parent context**.
+- In the case of the **Global Execution Context (GEC)**:
+  - The parent reference points to `null`.
+
+---
+
+## Variable Not Defined
+
+> A variable is considered **"not defined"** when the Scope Chain is **fully traversed** and the variable is still **not found**.
+
+---
+
+## Developer Tools
+
+- The **Scope Chain** can be **visualized** using the **developer tools** of any modern browser.
+  - Go to **Sources tab** > open the file > add a breakpoint > inspect **Scopes**.
+
+
+
+![scope-chain-dev-tools.png](../images/lexical2.jpg)
+
+---
+```
+function a() {
+  function c() {
+    // logic here
+  }
+  c(); // c is lexically inside a
+} // a is lexically inside global execution
+```
+> - Lexical or Static scope refers to the accessibility of variables, functions and object based on physical location in source code.
+```
+Global {
+    Outer {
+        Inner
+    }
+}
+// Inner is surrounded by lexical scope of Outer
+```
+> - TLDR; An inner function can access variables which are in outer functions even if inner function is nested deep. In any other case, a function can't access variables not in its scope.
+
